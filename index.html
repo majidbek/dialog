@@ -69,6 +69,13 @@
   </div>
 
   <div class="card">
+    <h1>Premium ⭐</h1>
+    <p class="hint" id="premium-status">Telegram Stars orqali sotib oling</p>
+    <br>
+    <button id="buy">Sotib olish — 1 ⭐</button>
+  </div>
+
+  <div class="card">
     <p class="hint">Telegram yuborgan foydalanuvchi ma'lumoti:</p>
     <pre id="user">—</pre>
   </div>
@@ -104,6 +111,39 @@
     // 4) Pastdagi katta ko'k tugma (MainButton)
     tg.MainButton.onClick(() => {
       tg.showAlert(`Siz ${count} marta bosdingiz!`);
+    });
+
+    // 5) Telegram Stars orqali to'lov.
+    //    Worker initData imzosini tekshiradi va to'lov havolasini qaytaradi.
+    const WORKER_URL = 'https://WORKER-MANZILI.workers.dev';
+
+    const buyBtn = document.getElementById('buy');
+    const status = document.getElementById('premium-status');
+    buyBtn.addEventListener('click', async () => {
+      buyBtn.disabled = true;
+      try {
+        const res = await fetch(`${WORKER_URL}/api/invoice`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ initData: tg.initData, product: 'premium' }),
+        });
+        const data = await res.json();
+        if (!data.link) throw new Error(data.error || 'xato');
+
+        tg.openInvoice(data.link, (result) => {
+          // result: 'paid' | 'cancelled' | 'failed' | 'pending'
+          if (result === 'paid') {
+            status.textContent = 'Premium faol! Rahmat ⭐';
+            tg.HapticFeedback && tg.HapticFeedback.notificationOccurred('success');
+          } else if (result === 'failed') {
+            tg.showAlert('To\'lov amalga oshmadi');
+          }
+        });
+      } catch (e) {
+        tg.showAlert(`Xatolik: ${e.message}`);
+      } finally {
+        buyBtn.disabled = false;
+      }
     });
   </script>
 </body>
