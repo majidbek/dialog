@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Dialog Mini App</title>
   <!-- Telegram Mini App SDK: window.Telegram.WebApp obyektini beradi -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js?v=20261009"></script>
   <style>
     /* Ranglar Telegram mavzusidan olinadi (yorug'/qorong'i rejimga moslashadi) */
     :root {
@@ -91,6 +91,11 @@
     // initData'ni SDK o'zi yuboradi, platforma uni tekshiradi.
     function call(name, input) {
       return new Promise((resolve, reject) => {
+        if (!tg.Serverless) {
+          reject(new Error(`Serverless mavjud emas. App manzili: ${location.host}. ` +
+            'Ilovani https://app8860397801.tgcloud.ai/ orqali oching va Telegram\'ni yangilang.'));
+          return;
+        }
         tg.Serverless.call(name, input || {}, (err, result) => {
           if (err) reject(err); else resolve(result);
         });
