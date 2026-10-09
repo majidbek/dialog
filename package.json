@@ -1,0 +1,14 @@
+{
+  "name": "dialog",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dialog: Telegram Mini App on Telegram Serverless",
+  "scripts": {
+    "deploy": "tgcloud push",
+    "migrate": "tgcloud migrate",
+    "status": "tgcloud status"
+  },
+  "devDependencies": {
+    "@tgcloud/cli": "0.2.0"
+  }
+}

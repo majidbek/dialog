@@ -82,67 +82,82 @@
 
   <script>
     const tg = window.Telegram.WebApp;
-
-    // 1) Telegram'ga app tayyorligini bildiramiz va to'liq ekranga yoyamiz
     tg.ready();
     tg.expand();
 
-    // 2) Foydalanuvchi ma'lumoti (faqat Telegram ichida ochilganda bo'ladi).
-    //    Eslatma: bu ma'lumotga frontendda ishonib bo'lmaydi — backendda
-    //    initData imzosini tekshiramiz (keyingi dars).
+    const $ = (id) => document.getElementById(id);
+
+    // Telegram Serverless endpointini chaqirish (tgcloud/endpoints/<name>.js).
+    // initData'ni SDK o'zi yuboradi, platforma uni tekshiradi.
+    function call(name, input) {
+      return new Promise((resolve, reject) => {
+        tg.Serverless.call(name, input || {}, (err, result) => {
+          if (err) reject(err); else resolve(result);
+        });
+      });
+    }
+
+    function showError(err) {
+      tg.showAlert((err && err.message) || 'Xatolik yuz berdi');
+    }
+
+    function renderPremium(premium) {
+      $('premium-status').textContent = premium
+        ? 'Premium faol! Rahmat ⭐'
+        : 'Telegram Stars orqali sotib oling';
+      $('buy').style.display = premium ? 'none' : '';
+    }
+
+    // 1) Telegram yuborgan foydalanuvchi ma'lumoti (faqat ko'rsatish uchun)
     const user = tg.initDataUnsafe && tg.initDataUnsafe.user;
     if (user) {
-      document.getElementById('greeting').textContent = `Salom, ${user.first_name}!`;
-      document.getElementById('user').textContent = JSON.stringify(user, null, 2);
+      $('greeting').textContent = `Salom, ${user.first_name}!`;
+      $('user').textContent = JSON.stringify(user, null, 2);
     }
-    document.getElementById('platform').textContent =
-      `Platforma: ${tg.platform} · SDK versiyasi: ${tg.version}`;
+    $('platform').textContent = `Platforma: ${tg.platform} · SDK versiyasi: ${tg.version}`;
 
-    // 3) Oddiy hisoblagich + tebranish (haptic) effekti
-    let count = 0;
-    document.getElementById('tap').addEventListener('click', () => {
-      count++;
-      document.getElementById('count').textContent = count;
+    // 2) Saqlangan holatni bazadan yuklaymiz
+    call('getMe')
+      .then((me) => {
+        $('count').textContent = me.taps;
+        renderPremium(me.premium);
+      })
+      .catch(showError);
+
+    // 3) Hisoblagich — har bosish bazaga yoziladi
+    $('tap').addEventListener('click', async () => {
       if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-      if (count === 1) tg.MainButton.show();
-      tg.MainButton.setText(`Natijani yuborish (${count})`);
-    });
-
-    // 4) Pastdagi katta ko'k tugma (MainButton)
-    tg.MainButton.onClick(() => {
-      tg.showAlert(`Siz ${count} marta bosdingiz!`);
-    });
-
-    // 5) Telegram Stars orqali to'lov.
-    //    Worker initData imzosini tekshiradi va to'lov havolasini qaytaradi.
-    const WORKER_URL = 'https://WORKER-MANZILI.workers.dev';
-
-    const buyBtn = document.getElementById('buy');
-    const status = document.getElementById('premium-status');
-    buyBtn.addEventListener('click', async () => {
-      buyBtn.disabled = true;
       try {
-        const res = await fetch(`${WORKER_URL}/api/invoice`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: tg.initData, product: 'premium' }),
-        });
-        const data = await res.json();
-        if (!data.link) throw new Error(data.error || 'xato');
+        const { taps } = await call('tap');
+        $('count').textContent = taps;
+        tg.MainButton.setText(`Natija: ${taps}`).show();
+      } catch (e) {
+        showError(e);
+      }
+    });
 
-        tg.openInvoice(data.link, (result) => {
-          // result: 'paid' | 'cancelled' | 'failed' | 'pending'
-          if (result === 'paid') {
-            status.textContent = 'Premium faol! Rahmat ⭐';
-            tg.HapticFeedback && tg.HapticFeedback.notificationOccurred('success');
-          } else if (result === 'failed') {
+    tg.MainButton.onClick(() => {
+      tg.showAlert(`Siz jami ${$('count').textContent} marta bosdingiz!`);
+    });
+
+    // 4) Telegram Stars orqali to'lov
+    $('buy').addEventListener('click', async () => {
+      $('buy').disabled = true;
+      try {
+        const { link } = await call('createInvoice', { product: 'premium' });
+        tg.openInvoice(link, (status) => {
+          // status: 'paid' | 'cancelled' | 'failed' | 'pending'
+          if (status === 'paid') {
+            renderPremium(true);
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+          } else if (status === 'failed') {
             tg.showAlert('To\'lov amalga oshmadi');
           }
         });
       } catch (e) {
-        tg.showAlert(`Xatolik: ${e.message}`);
+        showError(e);
       } finally {
-        buyBtn.disabled = false;
+        $('buy').disabled = false;
       }
     });
   </script>

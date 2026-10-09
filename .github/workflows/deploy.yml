@@ -1,0 +1,36 @@
+name: Deploy to Telegram Serverless
+
+on:
+  push:
+    branches: [ccr-fa2b6af3-nxethy]
+  workflow_dispatch:
+
+concurrency:
+  group: tgcloud-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      # BotFather → bot → Serverless → CLI Access dan olingan token.
+      # GitHub → Settings → Secrets and variables → Actions ga qo'shiladi.
+      TGCLOUD_TOKEN: ${{ secrets.TGCLOUD_TOKEN }}
+    steps:
+      - name: Check TGCLOUD_TOKEN secret
+        run: |
+          if [ -z "$TGCLOUD_TOKEN" ]; then
+            echo "::error::TGCLOUD_TOKEN secret topilmadi. GitHub → Settings → Secrets and variables → Actions ga qo'shing."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Bulutdagi holatni yuklab olamiz, so'ng faqat o'zgarganlarni yuboramiz
+      - run: npx tgcloud fetch
+      - run: npx tgcloud push
+      # Bazaga faqat xavfsiz o'zgarishlarni (yangi jadval/ustun) qo'llaymiz
+      - run: npx tgcloud migrate --safe
