@@ -6,14 +6,15 @@ Bot, Mini App, endpointlar va ma'lumotlar bazasi to'liq
 ## Tuzilma
 
 ```
-app/index.html                     Mini App (hisoblagich + Premium ⭐ sotib olish)
+app/index.html                     Mini App (hisoblagich, Premium ⭐, Top-10)
 tgcloud/schema.js                  users, payments jadvallari
-tgcloud/handlers/message.js        /start → "Ochish" tugmasi; successful_payment → Premium yoqiladi
+tgcloud/handlers/message.js        /start, to'lov qabul qilish; admin: /stats, /refund
 tgcloud/handlers/pre_checkout_query.js   to'lovdan oldingi tekshiruv
 tgcloud/endpoints/getMe.js         foydalanuvchi holati (taps, premium)
-tgcloud/endpoints/tap.js           hisoblagichni bazada oshiradi
+tgcloud/endpoints/tap.js           hisoblagich: oddiy +1, Premium +2
+tgcloud/endpoints/leaderboard.js   Top-10 (faqat Premium)
 tgcloud/endpoints/createInvoice.js Telegram Stars to'lov havolasi
-tgcloud/lib/                       config, products, users
+tgcloud/lib/                       config (APP_URL, ADMIN_IDS), products (narx), users, admin
 tgcloud.jsonc                      app/ ni Mini App sifatida joylaydi
 ```
 

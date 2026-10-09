@@ -2,7 +2,7 @@
 export const PRODUCTS = {
   premium: {
     title: 'Premium',
-    description: 'Dialog Mini App Premium imkoniyatlari',
-    stars: 1,
+    description: 'Har bosish ×2 va Top-10 reyting',
+    stars: 50,
   },
 };

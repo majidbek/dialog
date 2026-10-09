@@ -1,7 +1,8 @@
 import { api, db } from 'sdk';
 import { eq } from 'sdk/db';
 import { users, payments } from '../schema.js';
-import { APP_URL } from '../lib/config.js';
+import { APP_URL, ADMIN_IDS } from '../lib/config.js';
+import { sendStats, refund } from '../lib/admin.js';
 
 export default async function (message) {
   if (message.chat.type !== 'private') return;
@@ -23,6 +24,13 @@ export default async function (message) {
       text: `Rahmat! ${p.total_amount} ⭐ qabul qilindi. Premium faollashtirildi.`,
     });
     return;
+  }
+
+  // Admin buyruqlari
+  const text = message.text || '';
+  if (ADMIN_IDS.includes(message.from.id)) {
+    if (text === '/stats') return sendStats(message.chat.id);
+    if (text.startsWith('/refund')) return refund(message.chat.id, text.split(/\s+/)[1]);
   }
 
   await api.sendMessage({

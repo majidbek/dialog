@@ -19,6 +19,7 @@ export const payments = table('payments', {
   product:   text('product').notNull(),
   stars:     integer('stars').notNull(),
   chargeId:  text('charge_id').notNull(),
+  refunded:  boolean('refunded').notNull().default(false),
   createdAt: integer('created_at').notNull().default(sql`(unixepoch())`),
 }, (t) => ({
   chargeIdx: uniqueIndex('uidx_payments_charge').on(t.chargeId),

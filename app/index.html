@@ -63,16 +63,22 @@
   </div>
 
   <div class="card">
-    <p class="hint">Bosishlar soni</p>
+    <p class="hint">Bosishlar soni <span id="step"></span></p>
     <div class="counter" id="count">0</div>
     <button id="tap">Bosing</button>
   </div>
 
   <div class="card">
     <h1>Premium ⭐</h1>
-    <p class="hint" id="premium-status">Telegram Stars orqali sotib oling</p>
+    <p class="hint" id="premium-status">Har bosish ×2 va Top-10 reyting</p>
     <br>
-    <button id="buy">Sotib olish — 1 ⭐</button>
+    <button id="buy">Sotib olish</button>
+  </div>
+
+  <div class="card">
+    <h1>Top-10 🏆</h1>
+    <p class="hint" id="top-hint">Reyting faqat Premium uchun ochiq 🔒</p>
+    <ol id="top"></ol>
   </div>
 
   <div class="card">
@@ -108,9 +114,27 @@
 
     function renderPremium(premium) {
       $('premium-status').textContent = premium
-        ? 'Premium faol! Rahmat ⭐'
-        : 'Telegram Stars orqali sotib oling';
+        ? 'Premium faol! Har bosish ×2 ⭐'
+        : 'Har bosish ×2 va Top-10 reyting';
       $('buy').style.display = premium ? 'none' : '';
+      $('step').textContent = premium ? '(×2)' : '';
+      if (premium) loadLeaderboard();
+    }
+
+    // Top-10 — server faqat Premium foydalanuvchiga qaytaradi
+    async function loadLeaderboard() {
+      try {
+        const { top } = await call('leaderboard');
+        $('top-hint').textContent = '';
+        $('top').innerHTML = '';
+        for (const u of top) {
+          const li = document.createElement('li');
+          li.textContent = `${u.firstName || 'Foydalanuvchi'} — ${u.taps}`;
+          $('top').appendChild(li);
+        }
+      } catch (e) {
+        $('top-hint').textContent = e.message;
+      }
     }
 
     // 1) Telegram yuborgan foydalanuvchi ma'lumoti (faqat ko'rsatish uchun)
@@ -125,6 +149,7 @@
     call('getMe')
       .then((me) => {
         $('count').textContent = me.taps;
+        $('buy').textContent = `Sotib olish — ${me.premiumPrice} ⭐`;
         renderPremium(me.premium);
       })
       .catch(showError);
@@ -153,7 +178,8 @@
         tg.openInvoice(link, (status) => {
           // status: 'paid' | 'cancelled' | 'failed' | 'pending'
           if (status === 'paid') {
-            renderPremium(true);
+            // Premium'ni server to'lov xabaridan keyin yoqadi — holatni qayta so'raymiz
+            setTimeout(() => call('getMe').then((me) => renderPremium(me.premium)), 1500);
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
           } else if (status === 'failed') {
             tg.showAlert('To\'lov amalga oshmadi');
